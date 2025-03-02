@@ -1,0 +1,66 @@
+[
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-Wall",
+      "-Wextra",
+      "-Iinclude",
+      "-g",
+      "-c",
+      "-o",
+      "obj/client.o",
+      "src/client.c"
+    ],
+    "directory": "/home/ryoj/github.com/okamotonr/file_transfer",
+    "file": "/home/ryoj/github.com/okamotonr/file_transfer/src/client.c",
+    "output": "/home/ryoj/github.com/okamotonr/file_transfer/obj/client.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-Wall",
+      "-Wextra",
+      "-Iinclude",
+      "-g",
+      "-c",
+      "-o",
+      "obj/common.o",
+      "src/common.c"
+    ],
+    "directory": "/home/ryoj/github.com/okamotonr/file_transfer",
+    "file": "/home/ryoj/github.com/okamotonr/file_transfer/src/common.c",
+    "output": "/home/ryoj/github.com/okamotonr/file_transfer/obj/common.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-Wall",
+      "-Wextra",
+      "-Iinclude",
+      "-g",
+      "-c",
+      "-o",
+      "obj/main.o",
+      "src/main.c"
+    ],
+    "directory": "/home/ryoj/github.com/okamotonr/file_transfer",
+    "file": "/home/ryoj/github.com/okamotonr/file_transfer/src/main.c",
+    "output": "/home/ryoj/github.com/okamotonr/file_transfer/obj/main.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-Wall",
+      "-Wextra",
+      "-Iinclude",
+      "-g",
+      "-c",
+      "-o",
+      "obj/server.o",
+      "src/server.c"
+    ],
+    "directory": "/home/ryoj/github.com/okamotonr/file_transfer",
+    "file": "/home/ryoj/github.com/okamotonr/file_transfer/src/server.c",
+    "output": "/home/ryoj/github.com/okamotonr/file_transfer/obj/server.o"
+  }
+]
