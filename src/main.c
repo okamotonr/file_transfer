@@ -29,8 +29,7 @@ void print_transfer_cmd(const transfer_cmd *tcmd) {
 
     printf("Transfer Command:\n");
     printf("  Command   : %s\n", action_to_string(tcmd->cmd));
-    printf("  File Name : %s\n", tcmd->file_info.file_name);
-    printf("  File Size : %u bytes\n", tcmd->file_info.file_size);
+    printf("  File Name : %s\n", tcmd->file_name);
 }
 
 ssize_t read_all(int fd, char* buffer) {

@@ -30,19 +30,43 @@ uint64_t ntohll(uint64_t net_value) {
 #endif
 }
 
+size_t serialize_file_info(const file_info *info, uint8_t *buffer) {
+    size_t offset = 0;
+    buffer[offset] = info->file_type;
+    offset += sizeof(info->file_type);
+
+    uint64_t net_size = htonll(info->file_size);
+    memcpy(buffer + offset, &net_size, sizeof(info->file_size));
+    offset += sizeof(info->file_size);
+
+    // file_name (固定長 MAX_FILE_NAME バイト)
+    memset(buffer + offset, 0, MAX_FILE_NAME);
+    strncpy((char *)(buffer + offset), info->file_name, MAX_FILE_NAME - 1);
+    offset += sizeof(info->file_name);
+
+    return offset;
+}
+
 bool is_valid_name(const char *file_name) {
-  if (strchr(file_name, '/') != NULL) {
+  if (strstr(file_name, "/../") != NULL) {
     return false;
   }
 
-  if (strcmp(file_name, "..") == 0) {
+  if (strncmp(file_name, "..", 2) == 0) {
+    if (strlen(file_name) > 2) {
+        if (file_name[2] == '/') {
+          return false;
+        }
+
+        return true;
+    }
     return false;
   }
 
   return true;
 }
 
-void print_file_meta(const file_meta *file_info) {
+void print_file_info(const file_info *file_info) {
   printf("File Info:\n");
   printf("  File Type: %s\n", file_info->file_type == F ? "File" : "Dir");
   printf("  File Size: %lu\n", file_info->file_size);
@@ -60,7 +84,7 @@ int parse_command(const char *command_name) {
   return -1;
 }
 
-int recv_file_meta(int socket_fd, file_meta *file_info) {
+int recv_file_info(int socket_fd, file_info *file_info) {
   char buffer[sizeof(file_info->file_type) + sizeof(file_info->file_size) +
               sizeof(file_info->file_name)];
   size_t total_read = 0;
@@ -88,7 +112,8 @@ int recv_file_meta(int socket_fd, file_meta *file_info) {
   return 0;
 }
 
-int send_file_meta(int socket_fd, const file_meta *file_info) {
+int send_file_info(int socket_fd, const file_info *file_info) {
+
   char buffer[sizeof(file_info->file_type) + sizeof(file_info->file_size) +
               sizeof(file_info->file_name)];
 
@@ -106,7 +131,7 @@ int send_file_meta(int socket_fd, const file_meta *file_info) {
   return 0;
 }
 
-int from_file_name_to_file_meta(const char *file_name, file_meta *file_info) {
+int from_file_name_to_file_info(const char *file_name, file_info *file_info) {
   struct stat st;
   if (stat(file_name, &st) != 0) {
     perror("failed to stat()\n");
@@ -133,21 +158,21 @@ int from_file_name_to_file_meta(const char *file_name, file_meta *file_info) {
 
 int recv_file(int socket_fd, const char *file_name) {
   char buffer[4096];
-  file_meta file_info;
-  if (recv_file_meta(socket_fd, &file_info) != 0) {
+  file_info file_info;
+  if (recv_file_info(socket_fd, &file_info) != 0) {
     fprintf(stderr, "failed to recv file info");
     return -1;
   }
 
-  print_file_meta(&file_info);
+  print_file_info(&file_info);
 
   FILE *fp;
   int read_result;
 
   uint64_t file_sz_rem = file_info.file_size;
 
-  if ((fp = fopen(file_info.file_name, "w")) == NULL) {
-    perror("failed fopen()\n");
+  if ((fp = fopen(file_name, "w")) == NULL) {
+    perror("failed fopen() %s\n");
     return -1;
   }
 
@@ -171,9 +196,9 @@ int recv_file(int socket_fd, const char *file_name) {
   return 0;
 }
 
-int send_file(int socket_fd, const file_meta *file_info) {
+int send_file(int socket_fd, const file_info *file_info) {
 
-  print_file_meta(file_info);
+  print_file_info(file_info);
 
   if (file_info->file_type == D) {
     fprintf(stderr, "cannot send directory\n");

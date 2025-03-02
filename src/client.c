@@ -16,7 +16,7 @@
 int handle_client_send_file(int socket_fd, const char *file_name) {
   // wait ack
   char resp;
-  file_meta file_info;
+  file_info file_info;
   if (read(socket_fd, &resp, sizeof(char)) <= 0) {
     perror("failed to read\n");
     return -1;
@@ -27,7 +27,7 @@ int handle_client_send_file(int socket_fd, const char *file_name) {
     return -1;
   }
 
-  if (from_file_name_to_file_meta(file_name, &file_info) != 0) {
+  if (from_file_name_to_file_info(file_name, &file_info) != 0) {
     fprintf(stderr, "cannot get file info %s\n", file_name);
     return -1;
   }
@@ -35,21 +35,30 @@ int handle_client_send_file(int socket_fd, const char *file_name) {
 
 }
 
-int handle_client_recv_file() {
+int handle_client_recv_file(int socket_fd, const char *file_name) {
+  printf("recv file");
+  char resp;
+  if (read(socket_fd, &resp, sizeof(char)) <= 0) {
+    perror("failed to read\n");
+    return -1;
+  }
 
+  if (resp != ACK) {
+    fprintf(stderr, "server couldnot ack send file, %d\n", resp);
+    return -1;
+  }
+  return recv_file(socket_fd, file_name);
 }
 
 
 int handle_client_get_contents() {}
 
 void send_cmd(int socket_fd, const struct transfer_cmd *cmd) {
-  unsigned char buffer[sizeof(cmd->cmd) + sizeof(cmd->file_info.file_size) + sizeof(cmd->file_info.file_name)];
-  uint32_t file_size = htonl(cmd->file_info.file_size);
+  unsigned char buffer[sizeof(cmd->cmd) + sizeof(cmd->file_name)];
   ssize_t ret;
 
   memcpy(buffer, &cmd->cmd, sizeof(cmd->cmd));
-  memcpy(buffer + sizeof(cmd->cmd), &file_size, sizeof(file_size));
-  memcpy(buffer + sizeof(cmd->cmd) + sizeof(file_size), cmd->file_info.file_name, sizeof(cmd->file_info.file_name));
+  memcpy(buffer + sizeof(cmd->cmd), cmd->file_name, sizeof(cmd->file_name));
 
   ret = write(socket_fd, buffer, sizeof(buffer));
   if (ret != sizeof(buffer)) {
@@ -62,7 +71,6 @@ int handle_client(char* command_name, char* addr, char *file_name) {
   int client_sock;
   struct sockaddr_in server_addr;
   char cmd_type;
-  uint32_t file_size = 0;
   int parse_command_ret;
   if ((parse_command_ret = parse_command(command_name)) == -1) {
     fprintf(stderr, "failed to parse_command()");
@@ -92,16 +100,15 @@ int handle_client(char* command_name, char* addr, char *file_name) {
 
   transfer_cmd cmd;
   cmd.cmd = cmd_type;
-  cmd.file_info.file_size = file_size;
-  memcpy(cmd.file_info.file_name, file_name, sizeof(cmd.file_info.file_name));
+  memcpy(cmd.file_name, file_name, sizeof(cmd.file_name));
   print_transfer_cmd(&cmd);
   send_cmd(client_sock, &cmd);
   switch (cmd.cmd) {
      case SEND_FILE:
-       handle_client_send_file(client_sock, cmd.file_info.file_name);
+       handle_client_send_file(client_sock, cmd.file_name);
        break;
      case RECV_FILE:
-       handle_client_recv_file();
+       handle_client_recv_file(client_sock, cmd.file_name);
        break;
 case GET_CONTENTS:
        handle_client_get_contents();

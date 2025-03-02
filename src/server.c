@@ -11,6 +11,11 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+int get_contents(int socket_fd, const file_meta* file_info) {
+  
+  return 0;
+}
+
 int handle_server_send_file(int socket_fd, const char *file_name) {
   printf("client call send file\n");
   if (!is_valid_name(file_name)) {
@@ -43,7 +48,7 @@ int handle_server_recv_file(int socket_fd, const char *file_name) {
     }
     return -1;
   }
-  if (from_file_name_to_file_meta(file_name, &file_info) != 0) {
+  if (from_file_name_to_file_info(file_name, &file_info) != 0) {
     fprintf(stderr, "failed to get file info\n");
     char resp = NOTFOUND;
     if (write(socket_fd, &resp, sizeof(char)) < 0) {
@@ -67,16 +72,40 @@ int handle_server_recv_file(int socket_fd, const char *file_name) {
     return -1;
   }
 
-  return 0;
+  return send_file(socket_fd, &file_info);
 }
 
 int handle_server_get_contents(int socket_fd, const char *file_name) {
+  file_meta file_info;
+  if (!is_valid_name(file_name)) {
+    fprintf(stderr, "file_name is invalid, %s\n", file_name);
+    char resp = INVALIDNAME;
+    if (write(socket_fd, &resp, sizeof(char)) < 0) {
+      perror("failed to write()\n");
+    }
+    return -1;
+  }
+
+  if (file_info.file_type == F) {
+    fprintf(stderr, "not directory, %s\n", file_name);
+    char resp = ISNOTDIR;
+    if (write(socket_fd, &resp, sizeof(char)) < 0) {
+      perror("failed to write()\n");
+    }
+    return -1;
+  }
+
+  char ack = ACK;
+  if (write(socket_fd, &ack, sizeof(char)) < 0) {
+    perror("faied to write()\n");
+    return -1;
+  }
+
   return 0;
 }
 
 void recv_cmd(int socket_fd, struct transfer_cmd *cmd) {
-  char buffer[sizeof(cmd->cmd) + sizeof(cmd->file_info.file_size) +
-              sizeof(cmd->file_info.file_name)];
+  char buffer[sizeof(cmd->cmd) + sizeof(cmd->file_name)];
 
   size_t total_read = 0;
   ssize_t n;
@@ -96,11 +125,8 @@ void recv_cmd(int socket_fd, struct transfer_cmd *cmd) {
 
   uint32_t file_size;
   memcpy(&file_size, buffer + sizeof(cmd->cmd), sizeof(file_size));
-  cmd->file_info.file_size = ntohl(file_size);
 
-  memcpy(cmd->file_info.file_name,
-         buffer + sizeof(cmd->cmd) + sizeof(cmd->file_info.file_size),
-         sizeof(cmd->file_info.file_name));
+  memcpy(cmd->file_name, buffer + sizeof(cmd->cmd), sizeof(cmd->file_name));
 }
 
 int handle_server() {
@@ -146,13 +172,13 @@ int handle_server() {
     print_transfer_cmd(&cmd);
     switch (cmd.cmd) {
     case SEND_FILE:
-      handle_server_send_file(client_sock, cmd.file_info.file_name);
+      handle_server_send_file(client_sock, cmd.file_name);
       break;
     case RECV_FILE:
-      handle_server_recv_file(client_sock, cmd.file_info.file_name);
+      handle_server_recv_file(client_sock, cmd.file_name);
       break;
     case GET_CONTENTS:
-      handle_server_get_contents(client_sock, cmd.file_info.file_name);
+      handle_server_get_contents(client_sock, cmd.file_name);
       break;
     default:
       fprintf(stderr, "unknown command");
