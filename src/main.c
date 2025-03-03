@@ -1,10 +1,10 @@
 #include <fcntl.h>
+#include <limits.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <limits.h>
 
 #include "client.h"
 #include "server.h"
@@ -36,11 +36,11 @@ int main(int argc, char *argv[]) {
   if (strcmp(argv[1], "server") == 0) {
     printf("server\n");
     if (argc >= 3) {
-        const char *woring_dir = argv[2];
-        if (chdir(woring_dir) != 0) {
-           perror(woring_dir);
-           exit(EXIT_FAILURE);
-        };
+      const char *woring_dir = argv[2];
+      if (chdir(woring_dir) != 0) {
+        perror(woring_dir);
+        exit(EXIT_FAILURE);
+      };
     }
     char cwd[PATH_MAX];
     if (getcwd(cwd, sizeof(cwd)) != NULL) {

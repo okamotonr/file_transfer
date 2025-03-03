@@ -54,5 +54,4 @@ bool is_valid_path(const char *file_name);
 uint64_t htonll(uint64_t host_value);
 uint64_t ntohll(uint64_t net_value);
 
-
 #endif
